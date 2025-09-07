@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include "driver/gpio.h"
+#include "driver/uart.h"
 
 // Neo-M8N UART configuration
 #define GPS_UART_NUM     UART_NUM_2

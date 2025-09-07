@@ -7,6 +7,7 @@
 #include "esp_netif.h"
 #include "esp_http_server.h"
 #include "esp_spiffs.h"
+#include "lwip/ip4_addr.h"
 #include <string.h>
 #include <stdio.h>
 #include <dirent.h>

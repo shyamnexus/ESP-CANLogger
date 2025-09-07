@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 // Configuration getters
 int get_log_rate(void);
