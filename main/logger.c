@@ -54,6 +54,15 @@ void logger_write_entry(const log_entry_t* entry) {
     fflush(log_file);
 }
 
+void test_task(void *pv){
+			  ssd1306_scrolllog_init("log.txt");
+    ssd1306_scrolllog_printf("=== Data Logger Started ===");
+	 while (1) {
+
+oled_update_display();
+		  vTaskDelay(pdMS_TO_TICKS(1000));
+		 }
+}
 void logger_task(void *pv) {
     // Create log filename with timestamp
     time_t now = time(NULL);
@@ -154,5 +163,7 @@ void logger_task(void *pv) {
 }
 
 void logger_start(void) {
-    xTaskCreate(logger_task, "logger_task", 8192, NULL, 5, NULL);
+ //   xTaskCreate(logger_task, "logger_task", 8192, NULL, 5, NULL);
+   xTaskCreate(test_task, "test_task", 8192, NULL, 5, NULL);
+
 }

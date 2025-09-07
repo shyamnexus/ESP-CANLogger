@@ -102,26 +102,26 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     // Initialize network interface
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+ //   ESP_ERROR_CHECK(esp_netif_init());
+ //   ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // Initialize power monitoring
-    init_power_monitoring();
+ //   init_power_monitoring();
 
     // Initialize SD card
-    init_sdcard();
+ //   init_sdcard();
 
     // Initialize SPIFFS for web interface
-    wifi_config_spiffs_init();
+ //   wifi_config_spiffs_init();
 
     // Initialize hardware components
-    thermocouple_init();
-    gps_init();
+  //  thermocouple_init();
+  //  gps_init();
     oled_init();
     
     // Start WiFi AP and web server
-    wifi_start_ap();
-    webserver_start();
+ //   wifi_start_ap();
+ //   webserver_start();
 
     // Start data logging task
     logger_start();
