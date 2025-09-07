@@ -9,6 +9,8 @@
 #include "driver/spi_common.h"
 #include "sdmmc_cmd.h"
 #include "esp_vfs_fat.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 // Module configuration
 #include "module_config.h"
@@ -114,6 +116,41 @@ static void init_power_monitoring(void)
 }
 #endif
 
+#ifdef ENABLE_OLED_MODULE
+static void oled_test_task(void *pvParameters) {
+    ESP_LOGI(TAG, "Starting OLED test task...");
+    vTaskDelay(pdMS_TO_TICKS(1000)); // Wait 1 second for initialization
+    
+    ESP_LOGI(TAG, "Running OLED test display...");
+    
+    // Test 1: Clear display
+    oled_clear();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    // Test 2: Display text
+    oled_display_text(0, 0, "ESP32 Working!");
+    oled_display_text(0, 16, "OLED Test OK");
+    oled_display_text(0, 32, "I2C Comm OK");
+    oled_update_display();
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    
+    // Test 3: Counter display
+    int counter = 0;
+    while (1) {
+        oled_clear();
+        oled_display_text(0, 0, "Counter:");
+        char counter_str[16];
+        snprintf(counter_str, sizeof(counter_str), "%d", counter);
+        oled_display_text(0, 16, counter_str);
+        oled_update_display();
+        
+        ESP_LOGI(TAG, "OLED: Counter: %d", counter);
+        counter++;
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+#endif
+
 void app_main(void)
 {
     ESP_LOGI(TAG, "ESP32 Data Logger Starting...");
@@ -156,6 +193,9 @@ void app_main(void)
 
 #ifdef ENABLE_OLED_MODULE
     oled_init();
+    
+    // Start OLED test task
+    xTaskCreate(oled_test_task, "oled_test_task", 4096, NULL, 5, NULL);
 #endif
 
 #ifdef ENABLE_CANBUS_MODULE

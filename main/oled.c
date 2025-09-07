@@ -60,6 +60,8 @@ static esp_err_t oled_write_data(uint8_t *data, size_t len) {
 
 void oled_init(void) {
     ESP_LOGI(TAG, "Initializing SSD1306 OLED...");
+    ESP_LOGI(TAG, "I2C Config: SDA=GPIO%d, SCL=GPIO%d, Addr=0x%02X", 
+             OLED_SDA_PIN, OLED_SCL_PIN, OLED_ADDR);
     
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
@@ -72,18 +74,27 @@ void oled_init(void) {
     
     esp_err_t ret = i2c_param_config(OLED_I2C_PORT, &conf);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "I2C param config failed");
+        ESP_LOGE(TAG, "I2C param config failed: %s", esp_err_to_name(ret));
         return;
     }
+    ESP_LOGI(TAG, "I2C param config OK");
     
     ret = i2c_driver_install(OLED_I2C_PORT, conf.mode, 0, 0, 0);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "I2C driver install failed");
+        ESP_LOGE(TAG, "I2C driver install failed: %s", esp_err_to_name(ret));
+        return;
+    }
+    ESP_LOGI(TAG, "I2C driver installed");
+    
+    // Test I2C communication
+    ret = oled_write_cmd(SSD1306_DISPLAYOFF);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "I2C communication test failed: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Check wiring: SDA->GPIO%d, SCL->GPIO%d", OLED_SDA_PIN, OLED_SCL_PIN);
         return;
     }
     
     // Initialize SSD1306
-    oled_write_cmd(SSD1306_DISPLAYOFF);
     oled_write_cmd(SSD1306_SETDISPLAYCLOCKDIV);
     oled_write_cmd(0x80);
     oled_write_cmd(SSD1306_SETMULTIPLEX);
@@ -110,6 +121,13 @@ void oled_init(void) {
     oled_write_cmd(SSD1306_DISPLAYON);
     
     oled_clear();
+    
+    // Display initial test message
+    oled_display_text(0, 0, "ESP32 Data Logger");
+    oled_display_text(0, 16, "OLED Module Test");
+    oled_display_text(0, 32, "Initializing...");
+    oled_update_display();
+    
     ESP_LOGI(TAG, "SSD1306 OLED initialized successfully");
 }
 
@@ -124,11 +142,16 @@ void oled_display_text(int x, int y, const char* text) {
     for (int i = 0; i < len && (x + i * 8) < OLED_WIDTH; i++) {
         char c = text[i];
         if (c >= 32 && c <= 126) {
-            // Simple 8x8 font rendering (simplified)
+            // Simple 8x8 font rendering - create a simple pattern for each character
             for (int row = 0; row < 8 && (y + row) < OLED_HEIGHT; row++) {
-                int buffer_index = (y + row) * (OLED_WIDTH / 8) + (x + i * 8) / 8;
-                if (buffer_index < sizeof(oled_buffer)) {
-                    oled_buffer[buffer_index] |= (1 << ((x + i * 8) % 8));
+                for (int col = 0; col < 8 && (x + i * 8 + col) < OLED_WIDTH; col++) {
+                    int buffer_index = (y + row) * (OLED_WIDTH / 8) + (x + i * 8 + col) / 8;
+                    if (buffer_index < sizeof(oled_buffer)) {
+                        // Create a simple character pattern
+                        if (row == 0 || row == 7 || col == 0 || col == 7) {
+                            oled_buffer[buffer_index] |= (1 << ((x + i * 8 + col) % 8));
+                        }
+                    }
                 }
             }
         }
