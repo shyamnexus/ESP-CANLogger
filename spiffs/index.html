@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Data Logger</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ESP32 Data Logger</h1>
+        
+        <div class="section">
+            <h2>Configuration</h2>
+            <div class="config-item">
+                <label for="logRate">Log Rate (Hz):</label>
+                <input type="number" id="logRate" min="1" max="100" value="10">
+                <button onclick="updateConfig()">Update</button>
+            </div>
+            <div class="config-item">
+                <label for="canSpeed">CAN Speed (kbps):</label>
+                <select id="canSpeed">
+                    <option value="125">125</option>
+                    <option value="250">250</option>
+                    <option value="500" selected>500</option>
+                    <option value="1000">1000</option>
+                </select>
+                <button onclick="updateConfig()">Update</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Live Data</h2>
+            <div class="data-grid">
+                <div class="data-item">
+                    <h3>Thermocouples</h3>
+                    <div>T1: <span id="temp1">--</span>°C</div>
+                    <div>T2: <span id="temp2">--</span>°C</div>
+                    <div>T3: <span id="temp3">--</span>°C</div>
+                    <div>T4: <span id="temp4">--</span>°C</div>
+                </div>
+                <div class="data-item">
+                    <h3>GPS</h3>
+                    <div>Status: <span id="gpsStatus">--</span></div>
+                    <div>Lat: <span id="gpsLat">--</span></div>
+                    <div>Lon: <span id="gpsLon">--</span></div>
+                </div>
+                <div class="data-item">
+                    <h3>CAN Bus</h3>
+                    <div>ID: <span id="canId">--</span></div>
+                    <div>Data: <span id="canData">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Data Files</h2>
+            <button onclick="refreshFiles()">Refresh</button>
+            <div id="fileList"></div>
+        </div>
+
+        <div class="section">
+            <h2>System Status</h2>
+            <div id="systemStatus">
+                <div>Uptime: <span id="uptime">--</span></div>
+                <div>Free Memory: <span id="freeMem">--</span></div>
+                <div>Log Count: <span id="logCount">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let statusInterval;
+        let fileListInterval;
+
+        function updateConfig() {
+            const logRate = document.getElementById('logRate').value;
+            const canSpeed = document.getElementById('canSpeed').value;
+            
+            fetch('/api/set', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rate: parseInt(logRate),
+                    can: parseInt(canSpeed)
+                })
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log('Config updated:', data);
+                alert('Configuration updated successfully');
+            })
+            .catch(error => {
+                console.error('Error updating config:', error);
+                alert('Error updating configuration');
+            });
+        }
+
+        function updateStatus() {
+            fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('temp1').textContent = data.T1.toFixed(1);
+                document.getElementById('temp2').textContent = data.T2.toFixed(1);
+                document.getElementById('temp3').textContent = data.T3.toFixed(1);
+                document.getElementById('temp4').textContent = data.T4.toFixed(1);
+                
+                document.getElementById('gpsStatus').textContent = data.fix ? 'Fix' : 'No Fix';
+                document.getElementById('gpsLat').textContent = data.lat.toFixed(6);
+                document.getElementById('gpsLon').textContent = data.lon.toFixed(6);
+                
+                document.getElementById('canId').textContent = data.can_id >= 0 ? '0x' + data.can_id.toString(16).toUpperCase() : '--';
+                document.getElementById('canData').textContent = data.can_data || '--';
+            })
+            .catch(error => {
+                console.error('Error fetching status:', error);
+            });
+        }
+
+        function refreshFiles() {
+            fetch('/api/files')
+            .then(response => response.json())
+            .then(files => {
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+                
+                if (files.length === 0) {
+                    fileList.innerHTML = '<p>No log files found</p>';
+                    return;
+                }
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <span>${file}</span>
+                        <button onclick="downloadFile('${file}')">Download</button>
+                    `;
+                    fileList.appendChild(fileItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching files:', error);
+            });
+        }
+
+        function downloadFile(filename) {
+            window.open(`/api/download?file=${filename}`, '_blank');
+        }
+
+        function loadConfig() {
+            fetch('/api/get')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('logRate').value = data.rate;
+                document.getElementById('canSpeed').value = data.can;
+            })
+            .catch(error => {
+                console.error('Error loading config:', error);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfig();
+            updateStatus();
+            refreshFiles();
+            
+            // Start periodic updates
+            statusInterval = setInterval(updateStatus, 1000);
+            fileListInterval = setInterval(refreshFiles, 30000); // Refresh files every 30 seconds
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (statusInterval) clearInterval(statusInterval);
+            if (fileListInterval) clearInterval(fileListInterval);
+        });
+    </script>
+</body>
+</html>
