@@ -69,7 +69,7 @@ static void load_config() {
 }
 
 // --- SPIFFS init ---
-void spiffs_init(void) {
+void wifi_config_spiffs_init(void) {
     esp_vfs_spiffs_conf_t conf = {
         .base_path = "/spiffs",
         .partition_label = NULL,
