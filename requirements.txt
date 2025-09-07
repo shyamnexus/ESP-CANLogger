@@ -1,0 +1,16 @@
+# ESP-IDF Python tools
+esptool>=4.6
+idf-component-manager>=1.4.0
+pyserial>=3.5
+cryptography>=41.0.0
+
+# Filesystem + flashing helpers
+pyelftools>=0.29
+kconfiglib>=14.1.0
+
+# SPIFFS/LittleFS image tools
+mkspiffs>=0.2.0
+
+# Data processing (optional, for analyzing CSV logs in Python)
+pandas>=2.2.0
+matplotlib>=3.8.0

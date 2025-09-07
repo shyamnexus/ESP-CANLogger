@@ -1,0 +1,28 @@
+# ===== ESP-IDF build =====
+build/
+sdkconfig
+sdkconfig.old
+sdkconfig.defaults.old
+
+# ===== SPIFFS artifacts =====
+spiffs_image.img
+*.bin
+
+# ===== IDEs =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+ENV/
