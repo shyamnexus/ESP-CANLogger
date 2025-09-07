@@ -19,3 +19,4 @@ void oled_display_can_status(int can_id, int can_len, uint8_t* can_data);
 void oled_update_display(void);
 void ssd1306_scrolllog_init(const char *logfile);
 void ssd1306_scrolllog_printf(const char *fmt, ...);
+void oled_test_display(void);

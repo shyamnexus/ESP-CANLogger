@@ -55,13 +55,25 @@ void logger_write_entry(const log_entry_t* entry) {
 }
 
 void test_task(void *pv){
-			  ssd1306_scrolllog_init("log.txt");
+    ESP_LOGI(TAG, "Starting OLED test task...");
+    
+    // Run the OLED test display
+    oled_test_display();
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    
+    // Show some scrolling messages
+    ssd1306_scrolllog_init("test_log.txt");
     ssd1306_scrolllog_printf("=== Data Logger Started ===");
-	 while (1) {
-
-oled_update_display();
-		  vTaskDelay(pdMS_TO_TICKS(1000));
-		 }
+    ssd1306_scrolllog_printf("OLED Test Running...");
+    ssd1306_scrolllog_printf("ESP32 Working!");
+    ssd1306_scrolllog_printf("I2C Communication OK");
+    ssd1306_scrolllog_printf("Display Test Complete");
+    
+    int counter = 0;
+    while (1) {
+        ssd1306_scrolllog_printf("Counter: %d", counter++);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
 }
 void logger_task(void *pv) {
     // Create log filename with timestamp
