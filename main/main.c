@@ -10,12 +10,33 @@
 #include "sdmmc_cmd.h"
 #include "esp_vfs_fat.h"
 
+// Module configuration
+#include "module_config.h"
+
+// Conditional module includes
+#ifdef ENABLE_LOGGER_MODULE
 #include "logger.h"
+#endif
+
+#ifdef ENABLE_THERMOCOUPLE_MODULE
 #include "thermocouple.h"
+#endif
+
+#ifdef ENABLE_GPS_MODULE
 #include "gps.h"
+#endif
+
+#ifdef ENABLE_OLED_MODULE
 #include "oled.h"
+#endif
+
+#ifdef ENABLE_CANBUS_MODULE
 #include "canbus.h"
+#endif
+
+#ifdef ENABLE_WIFI_CONFIG_MODULE
 #include "wifi_config.h"
+#endif
 
 static const char *TAG = "MAIN";
 
@@ -28,6 +49,7 @@ static const char *TAG = "MAIN";
 // Power management GPIO
 #define POWER_MONITOR_GPIO GPIO_NUM_34
 
+#ifdef ENABLE_SDCARD_MODULE
 static void init_sdcard(void)
 {
     ESP_LOGI(TAG, "Initializing SD card...");
@@ -74,7 +96,9 @@ static void init_sdcard(void)
     sdmmc_card_print_info(stdout, card);
     ESP_LOGI(TAG, "SD card mounted successfully");
 }
+#endif
 
+#ifdef ENABLE_POWER_MONITORING_MODULE
 static void init_power_monitoring(void)
 {
     // Configure ADC for battery voltage monitoring
@@ -88,6 +112,7 @@ static void init_power_monitoring(void)
     gpio_config(&io_conf);
     ESP_LOGI(TAG, "Power monitoring GPIO configured");
 }
+#endif
 
 void app_main(void)
 {
@@ -105,29 +130,81 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+#ifdef ENABLE_POWER_MONITORING_MODULE
     // Initialize power monitoring
     init_power_monitoring();
+#endif
 
+#ifdef ENABLE_SDCARD_MODULE
     // Initialize SD card
     init_sdcard();
+#endif
 
+#ifdef ENABLE_WIFI_CONFIG_MODULE
     // Initialize SPIFFS for web interface
     wifi_config_spiffs_init();
+#endif
 
-    // Initialize hardware components
+    // Initialize hardware components based on configuration
+#ifdef ENABLE_THERMOCOUPLE_MODULE
     thermocouple_init();
+#endif
+
+#ifdef ENABLE_GPS_MODULE
     gps_init();
+#endif
+
+#ifdef ENABLE_OLED_MODULE
     oled_init();
-    
+#endif
+
+#ifdef ENABLE_CANBUS_MODULE
+    canbus_init(500); // Default 500 kbps
+#endif
+
+#ifdef ENABLE_WIFI_CONFIG_MODULE
     // Start WiFi AP and web server
     wifi_start_ap();
     webserver_start();
+#endif
 
+#ifdef ENABLE_LOGGER_MODULE
     // Start data logging task
     logger_start();
+#endif
 
     ESP_LOGI(TAG, "ESP32 Data Logger Started Successfully");
+    
+#ifdef ENABLE_WIFI_CONFIG_MODULE
     ESP_LOGI(TAG, "Connect to WiFi: ESP32-LOGGER");
     ESP_LOGI(TAG, "Web interface: http://10.10.10.10");
+#endif
+
+    // Display enabled modules
+    ESP_LOGI(TAG, "Enabled modules:");
+#ifdef ENABLE_OLED_MODULE
+    ESP_LOGI(TAG, "  - OLED Display");
+#endif
+#ifdef ENABLE_THERMOCOUPLE_MODULE
+    ESP_LOGI(TAG, "  - Thermocouple");
+#endif
+#ifdef ENABLE_GPS_MODULE
+    ESP_LOGI(TAG, "  - GPS");
+#endif
+#ifdef ENABLE_CANBUS_MODULE
+    ESP_LOGI(TAG, "  - CAN Bus");
+#endif
+#ifdef ENABLE_WIFI_CONFIG_MODULE
+    ESP_LOGI(TAG, "  - WiFi Configuration");
+#endif
+#ifdef ENABLE_LOGGER_MODULE
+    ESP_LOGI(TAG, "  - Data Logger");
+#endif
+#ifdef ENABLE_SDCARD_MODULE
+    ESP_LOGI(TAG, "  - SD Card");
+#endif
+#ifdef ENABLE_POWER_MONITORING_MODULE
+    ESP_LOGI(TAG, "  - Power Monitoring");
+#endif
 }
 
