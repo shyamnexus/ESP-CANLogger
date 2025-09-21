@@ -131,3 +131,16 @@ void app_main(void)
     ESP_LOGI(TAG, "Web interface: http://10.10.10.10");
 }
 
+// FreeRTOS hook functions
+void vApplicationIdleHook(void)
+{
+    // Called on each iteration of the idle task
+    // Can be used for low power mode or background tasks
+}
+
+void vApplicationTickHook(void)
+{
+    // Called from every tick interrupt
+    // Can be used for time-critical operations
+}
+
