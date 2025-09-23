@@ -140,8 +140,8 @@ void oled_clear(void) {
     oled_update_display();
 }
 
-// Simple 8x8 font data (first 32 characters)
-static const uint8_t font8x8[32][8] = {
+// Simple 8x8 font data (ASCII 32 ' ' through 'Z')
+static const uint8_t font8x8[][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // space
     {0x18, 0x3C, 0x3C, 0x18, 0x18, 0x00, 0x18, 0x00}, // !
     {0x36, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // "
@@ -206,17 +206,24 @@ static const uint8_t font8x8[32][8] = {
 void oled_display_text(int x, int y, const char* text) {
     int len = strlen(text);
     for (int i = 0; i < len && (x + i * 8) < OLED_WIDTH; i++) {
-        char c = text[i];
-        if (c >= 32 && c <= 95) { // Only handle printable ASCII characters
+        unsigned char c = (unsigned char)text[i];
+        // Map lowercase to uppercase since the font table only has 'A'-'Z'
+        if (c >= 'a' && c <= 'z') {
+            c -= 32;
+        }
+        // Supported glyphs in font8x8 are ASCII 32 (' ') through 90 ('Z')
+        if (c >= 32 && c <= 'Z') {
             const uint8_t* font_char = font8x8[c - 32];
-            
+
             for (int row = 0; row < 8 && (y + row) < OLED_HEIGHT; row++) {
                 uint8_t font_byte = font_char[row];
                 for (int col = 0; col < 8 && (x + i * 8 + col) < OLED_WIDTH; col++) {
                     if (font_byte & (0x80 >> col)) {
-                        int buffer_index = (y + row) * (OLED_WIDTH / 8) + (x + i * 8 + col) / 8;
-                        int bit_pos = 7 - ((x + i * 8 + col) % 8);
-                        if (buffer_index < sizeof(oled_buffer)) {
+                        int px = x + i * 8 + col;
+                        int py = y + row;
+                        int buffer_index = (py / 8) * OLED_WIDTH + px; // SSD1306 uses vertical bytes
+                        int bit_pos = py % 8; // bit within the page byte
+                        if (buffer_index >= 0 && buffer_index < (int)sizeof(oled_buffer)) {
                             oled_buffer[buffer_index] |= (1 << bit_pos);
                         }
                     }
