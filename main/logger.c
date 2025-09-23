@@ -60,6 +60,14 @@ void test_task(void *pv){
     // Run the OLED test display
     oled_test_display();
     vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // Line drawing test
+    oled_test_lines();
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // Circle drawing test
+    oled_test_circles();
+    vTaskDelay(pdMS_TO_TICKS(2000));
     
     // Show some scrolling messages
     ssd1306_scrolllog_init("test_log.txt");
