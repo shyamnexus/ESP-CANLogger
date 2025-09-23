@@ -20,3 +20,7 @@ void oled_update_display(void);
 void ssd1306_scrolllog_init(const char *logfile);
 void ssd1306_scrolllog_printf(const char *fmt, ...);
 void oled_test_display(void);
+void oled_draw_line(int x0, int y0, int x1, int y1);
+void oled_draw_circle(int xc, int yc, int radius);
+void oled_test_lines(void);
+void oled_test_circles(void);

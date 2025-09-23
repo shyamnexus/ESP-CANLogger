@@ -116,6 +116,30 @@ A comprehensive data logging system for ESP32 with 4-channel K-type thermocouple
 - CAN bus activity
 - System status messages
 
+### OLED Tests
+
+Two visual diagnostics are added to validate line/circle rendering and quickly spot font issues.
+
+How to run on device:
+
+1. Build and flash as usual. The firmware starts a `test_task` that runs automatically.
+2. On boot, the display will show, in order:
+   - "OLED TEST" text lines
+   - Line test: border, crosshair, diagonals, and fan lines with header "LINE TEST"
+   - Circle test: concentric and corner circles with header "CIRCLE TEST"
+   - Followed by the existing scrolling log demo
+
+Files of interest:
+
+- `main/oled.h` adds `oled_draw_line`, `oled_draw_circle`, `oled_test_lines`, `oled_test_circles`.
+- `main/oled.c` implements drawing primitives and tests.
+- `main/logger.c` runs the tests in `test_task`.
+
+Notes on fonts:
+
+- The built‑in `font8x8` supports ASCII 32 through `Z`. Lowercase letters are mapped to uppercase.
+- If glyphs look clipped or misaligned during tests, it likely indicates a font bit ordering or buffer addressing issue; the geometric tests help isolate that from font data problems.
+
 ## File Structure
 
 ```

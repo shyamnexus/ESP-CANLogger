@@ -288,6 +288,65 @@ void oled_update_display(void) {
     oled_write_data(oled_buffer, sizeof(oled_buffer));
 }
 
+static void oled_draw_pixel(int x, int y)
+{
+    if (x < 0 || x >= OLED_WIDTH || y < 0 || y >= OLED_HEIGHT) {
+        return;
+    }
+    int buffer_index = (y / 8) * OLED_WIDTH + x;
+    int bit_pos = y % 8;
+    oled_buffer[buffer_index] |= (1 << bit_pos);
+}
+
+void oled_draw_line(int x0, int y0, int x1, int y1)
+{
+    int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
+    int sx = (x0 < x1) ? 1 : -1;
+    int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+
+    while (1) {
+        oled_draw_pixel(x0, y0);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = err << 1;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx) { err += dx; y0 += sy; }
+    }
+}
+
+static void circle_octants(int xc, int yc, int x, int y)
+{
+    oled_draw_pixel(xc + x, yc + y);
+    oled_draw_pixel(xc - x, yc + y);
+    oled_draw_pixel(xc + x, yc - y);
+    oled_draw_pixel(xc - x, yc - y);
+    oled_draw_pixel(xc + y, yc + x);
+    oled_draw_pixel(xc - y, yc + x);
+    oled_draw_pixel(xc + y, yc - x);
+    oled_draw_pixel(xc - y, yc - x);
+}
+
+void oled_draw_circle(int xc, int yc, int radius)
+{
+    if (radius <= 0) return;
+    int x = 0;
+    int y = radius;
+    int d = 1 - radius;
+    circle_octants(xc, yc, x, y);
+
+    while (y > x) {
+        if (d < 0) {
+            d += (x << 1) + 3;
+        } else {
+            d += ((x - y) << 1) + 5;
+            y--;
+        }
+        x++;
+        circle_octants(xc, yc, x, y);
+    }
+}
+
 void ssd1306_scrolllog_init(const char *logfile) {
     ESP_LOGI(TAG, "OLED log initialized: %s", logfile);
     oled_clear();
@@ -335,4 +394,53 @@ void oled_test_display(void) {
     oled_update_display();
     
     ESP_LOGI(TAG, "OLED test display completed");
+}
+
+void oled_test_lines(void)
+{
+    ESP_LOGI(TAG, "Running OLED line test...");
+    oled_clear();
+
+    // Border
+    oled_draw_line(0, 0, OLED_WIDTH - 1, 0);
+    oled_draw_line(0, OLED_HEIGHT - 1, OLED_WIDTH - 1, OLED_HEIGHT - 1);
+    oled_draw_line(0, 0, 0, OLED_HEIGHT - 1);
+    oled_draw_line(OLED_WIDTH - 1, 0, OLED_WIDTH - 1, OLED_HEIGHT - 1);
+
+    // Crosshair and diagonals
+    oled_draw_line(0, OLED_HEIGHT / 2, OLED_WIDTH - 1, OLED_HEIGHT / 2);
+    oled_draw_line(OLED_WIDTH / 2, 0, OLED_WIDTH / 2, OLED_HEIGHT - 1);
+    oled_draw_line(0, 0, OLED_WIDTH - 1, OLED_HEIGHT - 1);
+    oled_draw_line(0, OLED_HEIGHT - 1, OLED_WIDTH - 1, 0);
+
+    // Fan lines from corners
+    for (int x = 0; x < OLED_WIDTH; x += 8) {
+        oled_draw_line(0, 0, x, OLED_HEIGHT - 1);
+        oled_draw_line(OLED_WIDTH - 1, 0, OLED_WIDTH - 1 - x, OLED_HEIGHT - 1);
+    }
+
+    oled_display_text(2, 2, "LINE TEST");
+    oled_update_display();
+}
+
+void oled_test_circles(void)
+{
+    ESP_LOGI(TAG, "Running OLED circle test...");
+    oled_clear();
+
+    int cx = OLED_WIDTH / 2;
+    int cy = OLED_HEIGHT / 2;
+    int max_r = (OLED_HEIGHT < OLED_WIDTH ? OLED_HEIGHT : OLED_WIDTH) / 2 - 2;
+    for (int r = 4; r <= max_r; r += 6) {
+        oled_draw_circle(cx, cy, r);
+    }
+
+    // Corner circles
+    oled_draw_circle(0 + 10, 0 + 10, 8);
+    oled_draw_circle(OLED_WIDTH - 11, 0 + 10, 8);
+    oled_draw_circle(0 + 10, OLED_HEIGHT - 11, 8);
+    oled_draw_circle(OLED_WIDTH - 11, OLED_HEIGHT - 11, 8);
+
+    oled_display_text(2, 2, "CIRCLE TEST");
+    oled_update_display();
 }
